@@ -1,0 +1,9 @@
+{
+	"name": "akhiladf123",
+	"location": "southcentralus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "6d02fcd2-6874-4596-b6e6-7e30af6abc8e",
+		"tenantId": "045373a9-bb94-47b0-af5e-19f79c8c2755"
+	}
+}
