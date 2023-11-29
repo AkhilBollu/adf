@@ -37,6 +37,12 @@
 				},
 				{
 					"name": "exists1"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "derivedColumn1"
 				}
 			],
 			"scriptLines": [
@@ -81,6 +87,11 @@
 				"select1, select2 exists(src_Cno == trg_Cno,",
 				"     negate:true,",
 				"     broadcast: 'auto')~> exists1",
+				"select1, select2 lookup(src_Cno == trg_Cno,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 derive(CheckSum = iif(src_Fname!=trg_Fname||src_Location!=trg_Location, 1,0)) ~> derivedColumn1",
 				"exists1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
