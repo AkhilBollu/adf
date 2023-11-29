@@ -1,0 +1,112 @@
+{
+	"name": "Slowly Changing Dimension Type1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_DATASTORE",
+						"type": "LinkedServiceReference"
+					},
+					"name": "customer"
+				},
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_DATASTORE",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Dimcustomer"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "ls_azSQL_DATASTORE",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "select1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "exists1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Cno as integer,",
+				"          Fname as string,",
+				"          Location as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT Cno, Fname, Location FROM customer',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> customer",
+				"source(output(",
+				"          CustKey as integer,",
+				"          Cno as integer,",
+				"          Fname as string,",
+				"          Location as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'SELECT CustKey, Cno, Fname, Location\\nFROM Dimcustomer',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> Dimcustomer",
+				"customer select(mapColumn(",
+				"          src_Cno = Cno,",
+				"          src_Fname = Fname,",
+				"          src_Location = Location",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"Dimcustomer select(mapColumn(",
+				"          CustKey,",
+				"          trg_Cno = Cno,",
+				"          trg_Fname = Fname,",
+				"          trg_Location = Location",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select1, select2 exists(src_Cno == trg_Cno,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CustKey as integer,",
+				"          Cno as integer,",
+				"          Fname as string,",
+				"          Location as string,",
+				"          Flag as integer",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'Dimcustomer',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Cno = src_Cno,",
+				"          Fname = src_Fname,",
+				"          Location = src_Location",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
